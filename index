@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Генератор билетов — Bluefy BLE</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0e0e0f;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            color: #f0f0f0;
+        }
+        .wrapper { max-width: 500px; width: 100%; }
+        
+        .card {
+            background: #1c1c1e;
+            border-radius: 16px;
+            padding: 18px 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+        }
+        .card h3, .card h2 { color: #f0f0f0; margin-bottom: 12px; text-align: center; }
+        .hidden { display: none !important; }
+        
+        .company-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .company-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #2c2c2e;
+            color: #aaa;
+            flex: 1;
+            min-width: 90px;
+            transition: 0.15s;
+        }
+        .company-btn.active {
+            background: #34c759;
+            color: white;
+        }
+        
+        .field { margin-bottom: 12px; }
+        .field label { display: block; color: #8e8e93; font-size: 13px; margin-bottom: 4px; }
+        .field input, .field textarea, .field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #3a3a3c;
+            border-radius: 10px;
+            font-size: 15px;
+            background: #0e0e0f;
+            color: #f0f0f0;
+            font-family: inherit;
+        }
+        .field textarea { height: 60px; resize: vertical; }
+        .field select { appearance: auto; cursor: pointer; }
+        .field select option { background: #1c1c1e; color: #f0f0f0; }
+        
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .btn-row button { flex: 1; min-width: 70px; }
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.1s;
+            background: #2c2c2e;
+            color: #f0f0f0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-share { background: #34c759; color: white; }
+        .btn-print { background: #0a84ff; color: white; }
+        .btn-bt { background: #5e5ce6; color: white; }
+        .btn-bt.connected { background: #30d158; color: #0e0e0f; }
+        .btn-edit { background: #ff9f0a; color: #1c1c1e; }
+        .btn-cancel { background: #636366; color: white; }
+        .btn-save-draft { background: #af52de; color: white; }
+        .btn-clear-draft { background: #ff3b30; color: white; }
+        .btn-time { background: #2c2c2e; color: #f0f0f0; border: 1px solid #48484a; flex: 1; min-width: 44px; }
+        .btn-time:hover { background: #3a3a3c; }
+        .btn-route { background: #0a84ff; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; }
+        .btn-route-danger { background: #ff453a; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; }
+        
+        .bt-panel {
+            background: #2c2c2e;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #3a3a3c;
+        }
+        .bt-status {
+            font-size: 12px;
+            color: #8e8e93;
+            text-align: center;
+            margin-top: 8px;
+            word-break: break-word;
+            line-height: 1.35;
+        }
+        .bt-status.ok { color: #30d158; }
+        .bt-status.err { color: #ff453a; }
+        .bt-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
+        }
+        .bt-options > div { flex: 1; }
+        .bt-options label { font-size: 12px; color: #aaa; display: block; margin-bottom: 3px; }
+        .bt-options input[type="range"] { width: 100%; accent-color: #0a84ff; }
+        .bt-options select {
+            width: 100%;
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid #3a3a3c;
+            background: #0e0e0f;
+            color: #f0f0f0;
+            font-size: 13px;
+        }
+        .bt-filter-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #3a3a3c;
+            font-size: 12px;
+            color: #aaa;
+        }
+        .bt-filter-row label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            flex: 1;
+        }
+        .bt-filter-row select {
+            width: auto;
+            max-width: 190px;
+            padding: 5px 8px;
+            border-radius: 8px;
+            border: 1px solid #3a3a3c;
+            background: #0e0e0f;
+            color: #f0f0f0;
+            font-size: 12px;
+        }
+
+        .settings-card .qr-control {
+            background: #2c2c2e;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 12px;
+        }
+        .qr-control label { color: #aaa; font-size: 13px; display: block; margin-bottom: 4px; }
+        .qr-control input[type="range"] { width: 100%; background: #3a3a3c; height: 4px; border-radius: 4px; accent-color: #007aff; }
+        .setting-value { font-size: 12px; color: #5ac8fa; text-align: center; margin-top: 2px; }
+        .coord-info { font-size: 11px; color: #8e8e93; text-align: center; margin-top: 6px; }
+        .no-qr-note { font-size: 12px; color: #ff6961; text-align: center; padding: 8px; background: #3a1a1a; border-radius: 8px; margin-top: 8px; }
+        
+        .edit-panel {
+            background: #2c2c2e;
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 12px;
+            display: none;
+        }
+        .edit-panel textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #3a3a3c;
+            border-radius: 10px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            background: #0e0e0f;
+            color: #f0f0f0;
+        }
+        .button-group { display: flex; gap: 8px; margin-top: 8px; }
+        .button-group button { flex: 1; }
+        .draft-info { font-size: 11px; color: #8e8e93; text-align: center; margin-top: 6px; }
+        
+        /* Ширина термобумаги 58 мм = 384 px на 203 dpi; длина ~9 см (720 px) для ПИТЕРАВТО */
+        .ticket {
+            background: #ffffff;
+            width: 384px;
+            max-width: 100%;
+            padding: 14px 12px 12px 12px;
+            margin: 12px auto;
+            border-radius: 16px;
+            color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        .ticket.piter-ticket {
+            min-height: 0;
+        }
+        .ticket.printing-mode {
+            width: 384px !important;
+            max-width: 384px !important;
+            padding: 14px 12px 4px 12px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+        }
+        .ticket-content {
+            font-family: 'DIN Condensed', 'Arial Narrow', 'Courier New', monospace;
+            font-size: 18pt;
+            color: #000000;
+            white-space: pre-wrap;
+            word-break: break-word;
+            -webkit-font-smoothing: none;
+            font-smooth: never;
+            text-rendering: geometricPrecision;
+        }
+        .ticket.piter-ticket .ticket-content {
+            font-size: 20pt;
+            line-height: 1.28;
+        }
+        .qr-container { position: relative; padding-bottom: 4px; }
+        .qr-wrapper {
+            display: inline-block;
+            cursor: move;
+            position: relative;
+            left: 0;
+            top: 0;
+        }
+        .qr-wrapper canvas, .qr-wrapper img { display: block; image-rendering: pixelated; }
+        .preview-title { color: #aaa; font-size: 14px; margin: 10px 0 4px; text-align: center; font-weight: 500; letter-spacing: 1px; }
+        
+        .custom-alert {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:1000;
+        }
+        .custom-alert-content {
+            background: #1c1c1e; border-radius: 16px; padding: 24px; max-width: 300px; text-align: center; color: #f0f0f0;
+        }
+        .custom-alert-content button { margin-top: 16px; background: #007aff; color: white; border: none; padding: 8px 24px; border-radius: 8px; }
+        
+        .inline-time {
+            display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+        }
+        .inline-time .field { flex: 1; margin-bottom: 0; min-width: 140px; }
+        .inline-time .field input { background: #0e0e0f; color: #f0f0f0; }
+        .time-buttons {
+            display: flex;
+            gap: 4px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            padding-bottom: 4px;
+        }
+        .time-buttons .btn-time {
+            padding: 8px 10px;
+            font-size: 13px;
+            min-width: 38px;
+        }
+        
+        .route-manager {
+            background: #2c2c2e;
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 8px;
+        }
+        .route-manager .field { margin-bottom: 8px; }
+        .route-manager .field:last-child { margin-bottom: 0; }
+        .route-input-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .route-input-row input { flex: 2; min-width: 140px; }
+        .route-input-row button { flex: 0 0 auto; }
+
+        .route-quick-select {
+            background: #2c2c2e;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .route-quick-select .field { margin-bottom: 6px; }
+        .route-quick-select .field:last-child { margin-bottom: 0; }
+        .route-quick-select input {
+            background: #0e0e0f;
+            color: #f0f0f0;
+            border: 1px solid #3a3a3c;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 15px;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .route-quick-select input:focus {
+            border-color: #0a84ff;
+            outline: none;
+        }
+        .route-quick-select select {
+            background: #0e0e0f;
+            color: #f0f0f0;
+            border: 1px solid #3a3a3c;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 15px;
+            width: 100%;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .route-quick-select select:focus {
+            border-color: #0a84ff;
+            outline: none;
+        }
+        .route-quick-select select option { background: #1c1c1e; }
+        .route-quick-label {
+            font-size: 13px;
+            color: #8e8e93;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .route-count {
+            font-size: 12px;
+            color: #5ac8fa;
+            text-align: center;
+            margin-top: 6px;
+            padding: 4px;
+            background: #1c1c1e;
+            border-radius: 8px;
+        }
+        .route-count.highlight {
+            color: #ff9f0a;
+            background: #2c2c2e;
+        }
+        .auto-update-badge {
+            font-size: 11px;
+            color: #34c759;
+            text-align: center;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <!-- выбор перевозчика -->
+    <div class="card route-selector">
+        <h3>🚌 Перевозчик</h3>
+        <div class="company-buttons">
+            <button class="company-btn active" id="companyPatpBtn">🚍 ПАТП</button>
+            <button class="company-btn" id="companyPiterBtn">🏢 ПИТЕРАВТО</button>
+            <button class="company-btn" id="companyMttpBtn">🚋 МТТП</button>
+        </div>
+    </div>
+
+    <!-- БЫСТРЫЙ ВЫБОР МАРШРУТА (всегда сверху) -->
+    <div class="route-quick-select" id="routeQuickSelect">
+        <div class="field">
+            <label class="route-quick-label">🔍 Быстрый поиск по номеру</label>
+            <input type="text" id="routeSearchInput" placeholder="Введите номер маршрута..." autocomplete="off">
+        </div>
+        <div class="field">
+            <label class="route-quick-label">📋 Выберите маршрут</label>
+            <select id="routePresetSelect" size="5">
+                <option value="">— выберите маршрут —</option>
+            </select>
+        </div>
+        <div class="route-count" id="routeCount">Всего маршрутов: 0</div>
+        <div class="auto-update-badge">🔄 Автообновление включено</div>
+    </div>
+
+    <!-- Форма ПАТП -->
+    <div id="patpForm" class="card form-card">
+        <h2>🎫 ПАТП</h2>
+        <div class="inline-time">
+            <div class="field">
+                <label>📅 Дата и время</label>
+                <input type="text" id="patp_time">
+            </div>
+            <div class="time-buttons">
+                <button class="btn-time" data-target="patp_time" data-minutes="2">+2</button>
+                <button class="btn-time" data-target="patp_time" data-minutes="5">+5</button>
+                <button class="btn-time" data-target="patp_time" data-minutes="10">+10</button>
+                <button class="btn-time" data-target="patp_time" data-minutes="15">+15</button>
+            </div>
+        </div>
+        
+        <div class="field">
+            <label>🚌 Номер маршрута</label>
+            <input type="text" id="patp_route" value="345">
+        </div>
+        <div class="field">
+            <label>💳 Последние 4 цифры карты</label>
+            <input type="text" id="patp_card" value="7006" maxlength="4">
+        </div>
+        <div class="field">
+            <label>💰 Стоимость</label>
+            <input type="text" id="patp_price" value="40.00">
+        </div>
+
+        <!-- Управление маршрутами (добавление) -->
+        <div class="route-manager">
+            <h4 style="color:#f0f0f0; margin-bottom:10px; text-align:center;">➕ Управление маршрутами</h4>
+            <div class="field">
+                <label>Добавить маршрут</label>
+                <div class="route-input-row">
+                    <input type="text" id="patpNewRoute" placeholder="345 Абашево-Вокзал">
+                    <button class="btn-route" id="patpAddRoute">Добавить</button>
+                </div>
+                <div style="margin-top:4px; font-size:12px; color:#8e8e93;">Формат: номер остановка1-остановка2 (обратный добавится автоматически)</div>
+            </div>
+            <div class="field" style="margin-bottom:0;">
+                <label>Удалить маршрут</label>
+                <div style="display:flex; gap:6px;">
+                    <select id="patpDeleteSelect" style="flex:2; min-width:120px;"></select>
+                    <button class="btn-route-danger" id="patpDeleteBtn">🗑️ Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Форма ПИТЕРАВТО -->
+    <div id="piterForm" class="card form-card hidden">
+        <h2>🎫 ПИТЕРАВТО</h2>
+        <div class="inline-time">
+            <div class="field">
+                <label>📅 Дата и время</label>
+                <input type="text" id="piter_time">
+            </div>
+            <div class="time-buttons">
+                <button class="btn-time" data-target="piter_time" data-minutes="2">+2</button>
+                <button class="btn-time" data-target="piter_time" data-minutes="5">+5</button>
+                <button class="btn-time" data-target="piter_time" data-minutes="10">+10</button>
+                <button class="btn-time" data-target="piter_time" data-minutes="15">+15</button>
+            </div>
+        </div>
+        
+        <div class="field">
+            <label>🚌 Номер маршрута</label>
+            <input type="text" id="piter_route" value="5">
+        </div>
+        <div class="field">
+            <label>📍 Остановки</label>
+            <textarea id="piter_stops">Абашево-Вокзал</textarea>
+        </div>
+        <div class="field">
+            <label>💰 Стоимость</label>
+            <input type="text" id="piter_price" value="45.00">
+        </div>
+
+        <div class="route-manager">
+            <h4 style="color:#f0f0f0; margin-bottom:10px; text-align:center;">➕ Управление маршрутами</h4>
+            <div class="field">
+                <label>Добавить маршрут</label>
+                <div class="route-input-row">
+                    <input type="text" id="piterNewRoute" placeholder="5 Абашево-Вокзал">
+                    <button class="btn-route" id="piterAddRoute">Добавить</button>
+                </div>
+                <div style="margin-top:4px; font-size:12px; color:#8e8e93;">Формат: номер остановка1-остановка2 (обратный добавится автоматически)</div>
+            </div>
+            <div class="field" style="margin-bottom:0;">
+                <label>Удалить маршрут</label>
+                <div style="display:flex; gap:6px;">
+                    <select id="piterDeleteSelect" style="flex:2; min-width:120px;"></select>
+                    <button class="btn-route-danger" id="piterDeleteBtn">🗑️ Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Форма МТТП -->
+    <div id="mttpForm" class="card form-card hidden">
+        <h2>🎫 МТТП</h2>
+        <div class="inline-time">
+            <div class="field">
+                <label>📅 Дата и время</label>
+                <input type="text" id="mttp_time">
+            </div>
+            <div class="time-buttons">
+                <button class="btn-time" data-target="mttp_time" data-minutes="2">+2</button>
+                <button class="btn-time" data-target="mttp_time" data-minutes="5">+5</button>
+                <button class="btn-time" data-target="mttp_time" data-minutes="10">+10</button>
+                <button class="btn-time" data-target="mttp_time" data-minutes="15">+15</button>
+            </div>
+        </div>
+        
+        <div class="field">
+            <label>🚋 Номер маршрута</label>
+            <input type="text" id="mttp_route" value="6">
+        </div>
+        <div class="field">
+            <label>💳 Последние 4 цифры карты</label>
+            <input type="text" id="mttp_card" value="0497" maxlength="4">
+        </div>
+        <div class="field">
+            <label>💰 Стоимость</label>
+            <input type="text" id="mttp_price" value="40.00">
+        </div>
+        <div class="no-qr-note">ℹ️ QR-код для МТТП не используется</div>
+
+        <div class="route-manager">
+            <h4 style="color:#f0f0f0; margin-bottom:10px; text-align:center;">➕ Управление маршрутами</h4>
+            <div class="field">
+                <label>Добавить маршрут</label>
+                <div class="route-input-row">
+                    <input type="text" id="mttpNewRoute" placeholder="6 Абашево-Вокзал">
+                    <button class="btn-route" id="mttpAddRoute">Добавить</button>
+                </div>
+                <div style="margin-top:4px; font-size:12px; color:#8e8e93;">Формат: номер остановка1-остановка2 (обратный добавится автоматически)</div>
+            </div>
+            <div class="field" style="margin-bottom:0;">
+                <label>Удалить маршрут</label>
+                <div style="display:flex; gap:6px;">
+                    <select id="mttpDeleteSelect" style="flex:2; min-width:120px;"></select>
+                    <button class="btn-route-danger" id="mttpDeleteBtn">🗑️ Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Настройки и кнопки -->
+    <div class="card settings-card">
+        <!-- Блок Bluetooth-принтера MXW01 / MXW-W5 (автоподбор стратегии под Bluefy iOS) -->
+        <div class="bt-panel">
+            <div class="btn-row" style="margin-top:0;">
+                <button class="btn-bt" id="btConnectBtn">🔵 Подключить принтер</button>
+                <button class="btn-print" id="btPrintBtn" disabled>🖨️ Печать</button>
+            </div>
+            <div class="bt-options">
+                <div>
+                    <label>🔥 Интенсивность: <span id="btIntensityVal">95</span></label>
+                    <input type="range" id="btIntensitySlider" min="30" max="127" step="1" value="95">
+                </div>
+                <div>
+                    <label>📜 Протяжка после</label>
+                    <select id="btFeedSelect">
+                        <option value="0" selected>Минимальная (сразу)</option>
+                        <option value="8">Короткая (8 px)</option>
+                        <option value="18">Средняя (18 px)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="bt-filter-row">
+                <label for="btStrategySelect">Режим сканирования:</label>
+                <select id="btStrategySelect">
+                    <option value="auto" selected>Автоподбор всех вариантов</option>
+                    <option value="service_full">1. Фильтр сервис AE30 (128-бит)</option>
+                    <option value="service_short">2. Фильтр сервис 0xAE30</option>
+                    <option value="name_mxw">3. Фильтр по имени MXW/GB/GT</option>
+                    <option value="all_full">4. Все устройства + 128-бит</option>
+                    <option value="all_short">5. Все устройства + 0xAE30</option>
+                </select>
+            </div>
+            <div class="bt-status" id="btStatus">Принтер не подключён (MXW01 / MXW-W5)</div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-share" id="shareBtn">📤 Сохранить PNG</button>
+            <button class="btn-edit" id="editBtn">✏️ Черновик</button>
+            <button class="btn-clear-draft" id="clearDraftBtn">🗑️ Очистить</button>
+        </div>
+        
+        <div class="qr-control">
+            <label>🔤 Межбуквенный интервал</label>
+            <input type="range" id="letterSpacingSlider" min="-0.5" max="3" step="0.1" value="0.8">
+            <div class="setting-value" id="spacingValue">0.8 px</div>
+        </div>
+        <div class="qr-control">
+            <label>📏 Межстрочный интервал</label>
+            <input type="range" id="lineHeightSlider" min="0.8" max="1.8" step="0.02" value="1.05">
+            <div class="setting-value" id="lineHeightValue">1.05</div>
+        </div>
+        <div class="qr-control">
+            <label>💪 Жирность</label>
+            <input type="range" id="fontWeightSlider" min="100" max="900" step="100" value="900">
+            <div class="setting-value" id="fontWeightValue">900 (жирный)</div>
+        </div>
+        
+        <div class="qr-control" id="qrSettingsBlock">
+            <label>📱 QR-код</label>
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;"><input type="range" id="qrSizeSlider" min="50" max="150" step="2" value="90"><div class="setting-value">Размер: 90 px</div></div>
+                <div style="flex:1;"><input type="range" id="qrLeftSlider" min="0" max="100" step="1" value="14"><div class="setting-value">Отступ слева: 14 px</div></div>
+            </div>
+            <div><input type="range" id="qrTopSlider" min="0" max="300" step="5" value="10"><div class="setting-value">Отступ сверху: 10 px</div></div>
+            <div class="coord-info">👉 Перетащите QR-код пальцем</div>
+        </div>
+        
+        <div class="edit-panel" id="editPanel">
+            <textarea id="draftText" rows="12"></textarea>
+            <div class="button-group">
+                <button class="btn-save-draft" id="saveDraftBtn">💾 Сохранить</button>
+                <button class="btn-cancel" id="cancelEditBtn">❌ Отмена</button>
+            </div>
+            <div class="draft-info">Редактируйте текст. Сохранится для этого перевозчика.</div>
+        </div>
+    </div>
+
+    <div class="preview-title">━━━━━━ 🎫 БИЛЕТ ━━━━━━</div>
+    <div id="ticketArea">
+        <div class="ticket" id="ticketToCapture">
+            <div class="ticket-content" id="ticketText"></div>
+            <div class="qr-container" id="qrContainer">
+                <div class="qr-wrapper" id="qrWrapper"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.11/dist/interact.min.js"></script>
+<script>
+    let currentCompany = 'patp';
+    let currentTicketText = '';
+    let currentQR = null;
+    let currentTicketNumber = Math.floor(Math.random() * 90000) + 10000;
+    let currentMttpTicketNumber = Math.floor(Math.random() * 9000000000) + 1000000000;
+    let allPresetsCache = [];
+    let updateTimeout = null;
+    let isUpdating = false;
+    let isApplyingRoute = false;
+
+    // =========================================================
+    // Web Bluetooth драйвер для MXW01 / MXW-W5 (растровая печать 58 мм / 384 px)
+    // =========================================================
+    const MXWPrinter = (() => {
+        const SERVICE_UUID = '0000ae30-0000-1000-8000-00805f9b34fb';
+        const WRITE_CHAR_UUID = '0000ae01-0000-1000-8000-00805f9b34fb';
+        const NOTIFY_CHAR_UUID = '0000ae02-0000-1000-8000-00805f9b34fb';
+        const DATA_CHAR_UUID = '0000ae03-0000-1000-8000-00805f9b34fb';
+
+        const ALT_SERVICE_UUID = 0xae30;
+        const ALT_WRITE_UUID = 0xae01;
+        const ALT_NOTIFY_UUID = 0xae02;
+        const ALT_DATA_UUID = 0xae03;
+
+        // 58 мм термобумага на 203 dpi = ровно 384 пикселя (48 байт на строку)
+        const PRINT_WIDTH = 384;
+        const BYTES_PER_ROW = 48;
+
+        const CRC8_TABLE = new Uint8Array([
+            0x00, 0x07, 0x0e, 0x09, 0x1c, 0x1b, 0x12, 0x15, 0x38, 0x3f, 0x36, 0x31, 0x24, 0x23, 0x2a, 0x2d,
+            0x70, 0x77, 0x7e, 0x79, 0x6c, 0x6b, 0x62, 0x65, 0x48, 0x4f, 0x46, 0x41, 0x54, 0x53, 0x5a, 0x5d,
+            0xe0, 0xe7, 0xee, 0xe9, 0xfc, 0xfb, 0xf2, 0xf5, 0xd8, 0xdf, 0xd6, 0xd1, 0xc4, 0xc3, 0xca, 0xcd,
+            0x90, 0x97, 0x9e, 0x99, 0x8c, 0x8b, 0x82, 0x85, 0xa8, 0xaf, 0xa6, 0xa1, 0xb4, 0xb3, 0xba, 0xbd,
+            0xc7, 0xc0, 0xc9, 0xce, 0xdb, 0xdc, 0xd5, 0xd2, 0xff, 0xf8, 0xf1, 0xf6, 0xe3, 0xe4, 0xed, 0xea,
+            0xb7, 0xb0, 0xb9, 0xbe, 0xab, 0xac, 0xa5, 0xa2, 0x8f, 0x88, 0x81, 0x86, 0x93, 0x94, 0x9d, 0x9a,
+            0x27, 0x20, 0x29, 0x2e, 0x3b, 0x3c, 0x35, 0x32, 0x1f, 0x18, 0x11, 0x16, 0x03, 0x04, 0x0d, 0x0a,
+            0x57, 0x50, 0x59, 0x5e, 0x4b, 0x4c, 0x45, 0x42, 0x6f, 0x68, 0x61, 0x66, 0x73, 0x74, 0x7d, 0x7a,
+            0x89, 0x8e, 0x87, 0x80, 0x95, 0x92, 0x9b, 0x9c, 0xb1, 0xb6, 0xbf, 0xb8, 0xad, 0xaa, 0xa3, 0xa4,
+            0xf9, 0xfe, 0xf7, 0xf0, 0xe5, 0xe2, 0xeb, 0xec, 0xc1, 0xc6, 0xcf, 0xc8, 0xdd, 0xda, 0xd3, 0xd4,
+            0x69, 0x6e, 0x67, 0x60, 0x75, 0x72, 0x7b, 0x7c, 0x51, 0x56, 0x5f, 0x58, 0x4d, 0x4a, 0x43, 0x44,
+            0x19, 0x1e, 0x17, 0x10, 0x05, 0x02, 0x0b, 0x0c, 0x21, 0x26, 0x2f, 0x28, 0x3d, 0x3a, 0x33, 0x34,
+            0x4e, 0x49, 0x40, 0x47, 0x52, 0x55, 0x5c, 0x5b, 0x76, 0x71, 0x78, 0x7f, 0x6a, 0x6d, 0x64, 0x63,
+            0x3e, 0x39, 0x30, 0x37, 0x22, 0x25, 0x2c, 0x2b, 0x06, 0x01, 0x08, 0x0f, 0x1a, 0x1d, 0x14, 0x13,
+            0xae, 0xa9, 0xa0, 0xa7, 0xb2, 0xb5, 0xbc, 0xbb, 0x96, 0x91, 0x98, 0x9f, 0x8a, 0x8d, 0x84, 0x83,
+            0xde, 0xd9, 0xd0, 0xd7, 0xc2, 0xc5, 0xcc, 0xcb, 0xe6, 0xe1, 0xe8, 0xef, 0xfa, 0xfd, 0xf4, 0xf3
+        ]);
+
+        const STRATEGIES = [
+            {
+                id: 'service_full',
+                label: 'Фильтр сервис AE30 (128-бит)',
+                options: {
+                    filters: [{ services: [SERVICE_UUID] }],
+                    optionalServices: [SERVICE_UUID]
+                }
+            },
+            {
+                id: 'service_short',
+                label: 'Фильтр сервис 0xAE30',
+                options: {
+                    filters: [{ services: [ALT_SERVICE_UUID] }],
+                    optionalServices: [ALT_SERVICE_UUID, SERVICE_UUID]
+                }
+            },
+            {
+                id: 'name_mxw',
+                label: 'Фильтр по имени MXW/GB/GT',
+                options: {
+                    filters: [
+                        { namePrefix: 'MXW' },
+                        { namePrefix: 'GB' },
+                        { namePrefix: 'GT' },
+                        { namePrefix: 'YHK' }
+                    ],
+                    optionalServices: [SERVICE_UUID, ALT_SERVICE_UUID]
+                }
+            },
+            {
+                id: 'all_full',
+                label: 'Все устройства + 128-бит',
+                options: {
+                    acceptAllDevices: true,
+                    optionalServices: [SERVICE_UUID]
+                }
+            },
+            {
+                id: 'all_short',
+                label: 'Все устройства + 0xAE30',
+                options: {
+                    acceptAllDevices: true,
+                    optionalServices: [ALT_SERVICE_UUID, SERVICE_UUID]
+                }
+            }
+        ];
+
+        let device = null;
+        let server = null;
+        let writeChar = null;
+        let notifyChar = null;
+        let dataChar = null;
+        let notifyResolvers = [];
+
+        function crc8(data) {
+            let crc = 0;
+            for (let i = 0; i < data.length; i++) {
+                crc = CRC8_TABLE[(crc ^ data[i]) & 0xff];
+            }
+            return crc;
+        }
+
+        function buildPacket(cmd, payload) {
+            const len = payload.length;
+            const pkt = new Uint8Array(8 + len);
+            pkt[0] = 0x22;
+            pkt[1] = 0x21;
+            pkt[2] = cmd & 0xff;
+            pkt[3] = 0x00;
+            pkt[4] = len & 0xff;
+            pkt[5] = (len >> 8) & 0xff;
+            pkt.set(payload, 6);
+            pkt[6 + len] = crc8(payload);
+            pkt[7 + len] = 0xff;
+            return pkt;
+        }
+
+        function handleNotification(event) {
+            if (!event || !event.target || !event.target.value) return;
+            const val = new Uint8Array(event.target.value.buffer);
+            if (val.length >= 4 && val[0] === 0x22 && val[1] === 0x21) {
+                const cmd = val[2];
+                for (let i = notifyResolvers.length - 1; i >= 0; i--) {
+                    if (notifyResolvers[i].cmd === cmd) {
+                        const r = notifyResolvers.splice(i, 1)[0];
+                        r.resolve(val);
+                    }
+                }
+            }
+        }
+
+        function waitNotify(cmd, timeoutMs = 4000) {
+            return new Promise((resolve) => {
+                const entry = { cmd, resolve: null };
+                const timer = setTimeout(() => {
+                    const idx = notifyResolvers.indexOf(entry);
+                    if (idx !== -1) notifyResolvers.splice(idx, 1);
+                    resolve(null);
+                }, timeoutMs);
+                entry.resolve = (data) => {
+                    clearTimeout(timer);
+                    resolve(data);
+                };
+                notifyResolvers.push(entry);
+            });
+        }
+
+        async function writeChunked(char, bytes, chunkSize = 120) {
+            const props = char.properties || {};
+            const useNoResp = Boolean(props.writeWithoutResponse);
+            for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+                const chunk = bytes.slice(offset, offset + chunkSize);
+                if (useNoResp && typeof char.writeValueWithoutResponse === 'function') {
+                    await char.writeValueWithoutResponse(chunk);
+                } else {
+                    await char.writeValue(chunk);
+                }
+                await new Promise(r => setTimeout(r, 12));
+            }
+        }
+
+        async function getServiceSafe(gattServer) {
+            try {
+                return await gattServer.getPrimaryService(SERVICE_UUID);
+            } catch (e) {
+                return await gattServer.getPrimaryService(ALT_SERVICE_UUID);
+            }
+        }
+
+        async function getCharSafe(service, fullUuid, shortUuid) {
+            try {
+                return await service.getCharacteristic(fullUuid);
+            } catch (e) {
+                return await service.getCharacteristic(shortUuid);
+            }
+        }
+
+        function isUserCancelled(err) {
+            const name = (err && err.name || '').toLowerCase();
+            const msg = (err && err.message || '').toLowerCase();
+            return name === 'notfounderror' || msg.includes('cancelled') || msg.includes('cancel') || msg.includes('user');
+        }
+
+        async function openDeviceWithAutoFallback(strategyMode, onProgress) {
+            const savedStrategy = localStorage.getItem('mxw_working_strategy');
+            let queue = [];
+
+            if (strategyMode === 'auto') {
+                const ordered = [...STRATEGIES];
+                if (savedStrategy) {
+                    const idx = ordered.findIndex(s => s.id === savedStrategy);
+                    if (idx > 0) {
+                        const [preferred] = ordered.splice(idx, 1);
+                        ordered.unshift(preferred);
+                    }
+                }
+                queue = ordered;
+            } else {
+                const selected = STRATEGIES.find(s => s.id === strategyMode);
+                queue = selected ? [selected] : [...STRATEGIES];
+            }
+
+            let lastErr = null;
+            for (let i = 0; i < queue.length; i++) {
+                const strat = queue[i];
+                if (onProgress) {
+                    onProgress(`Вариант ${i + 1}/${queue.length}: ${strat.label}...`);
+                }
+                try {
+                    const found = await navigator.bluetooth.requestDevice(strat.options);
+                    localStorage.setItem('mxw_working_strategy', strat.id);
+                    return { foundDevice: found, usedStrategy: strat };
+                } catch (err) {
+                    lastErr = err;
+                    if (strategyMode !== 'auto') {
+                        throw err;
+                    }
+                    await new Promise(r => setTimeout(r, 120));
+                }
+            }
+            throw lastErr || new Error('Не удалось открыть окно выбора BLE-устройства');
+        }
+
+        async function connect({ strategy = 'auto', onDisconnect, onProgress } = {}) {
+            if (!navigator.bluetooth) {
+                throw new Error('Web Bluetooth недоступен. Откройте страницу через HTTPS в Bluefy (iOS) или Chrome (Android/ПК).');
+            }
+
+            const { foundDevice, usedStrategy } = await openDeviceWithAutoFallback(strategy, onProgress);
+            device = foundDevice;
+
+            device.addEventListener('gattserverdisconnected', () => {
+                writeChar = null;
+                notifyChar = null;
+                dataChar = null;
+                if (onDisconnect) onDisconnect();
+            });
+
+            if (onProgress) onProgress(`Подключение к GATT (${usedStrategy.label})...`);
+            server = await device.gatt.connect();
+
+            await new Promise(r => setTimeout(r, 250));
+
+            if (onProgress) onProgress('Поиск сервиса печати (AE30)...');
+            const service = await getServiceSafe(server);
+
+            writeChar = await getCharSafe(service, WRITE_CHAR_UUID, ALT_WRITE_UUID);
+            dataChar = await getCharSafe(service, DATA_CHAR_UUID, ALT_DATA_UUID);
+
+            try {
+                notifyChar = await getCharSafe(service, NOTIFY_CHAR_UUID, ALT_NOTIFY_UUID);
+                await notifyChar.startNotifications();
+                notifyChar.addEventListener('characteristicvaluechanged', handleNotification);
+            } catch (notifyErr) {
+                notifyChar = null;
+            }
+
+            return {
+                name: device.name || 'MXW-W5',
+                strategyLabel: usedStrategy.label
+            };
+        }
+
+        function disconnect() {
+            if (device && device.gatt && device.gatt.connected) {
+                device.gatt.disconnect();
+            }
+        }
+
+        function isConnected() {
+            return Boolean(device && device.gatt && device.gatt.connected && writeChar && dataChar);
+        }
+
+        // Переводим картинку предпросмотра ровно в монохромные строки шириной 384 px (48 байт/строка)
+        function canvasToMonoRows(sourceCanvas, feedLines) {
+            const scale = PRINT_WIDTH / sourceCanvas.width;
+            const contentHeight = Math.max(1, Math.round(sourceCanvas.height * scale));
+            const totalHeight = Math.max(1, contentHeight + Math.max(0, feedLines));
+
+            const workCanvas = document.createElement('canvas');
+            workCanvas.width = PRINT_WIDTH;
+            workCanvas.height = totalHeight;
+            const ctx = workCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, PRINT_WIDTH, totalHeight);
+            ctx.drawImage(sourceCanvas, 0, 0, PRINT_WIDTH, contentHeight);
+
+            const imgData = ctx.getImageData(0, 0, PRINT_WIDTH, totalHeight).data;
+            const packed = new Uint8Array(totalHeight * BYTES_PER_ROW);
+
+            for (let y = 0; y < totalHeight; y++) {
+                for (let byteIdx = 0; byteIdx < BYTES_PER_ROW; byteIdx++) {
+                    let b = 0;
+                    for (let bit = 0; bit < 8; bit++) {
+                        const x = byteIdx * 8 + bit;
+                        const idx = (y * PRINT_WIDTH + x) * 4;
+                        const r = imgData[idx];
+                        const g = imgData[idx + 1];
+                        const bl = imgData[idx + 2];
+                        const a = imgData[idx + 3];
+                        const lum = a < 128 ? 255 : (0.299 * r + 0.587 * g + 0.114 * bl);
+                        if (lum < 180) {
+                            b |= (1 << bit);
+                        }
+                    }
+                    packed[y * BYTES_PER_ROW + byteIdx] = b;
+                }
+            }
+            return { data: packed, rows: totalHeight };
+        }
+
+        async function printCanvas(sourceCanvas, { intensity = 95, feedLines = 0 } = {}) {
+            if (!isConnected()) {
+                throw new Error('Принтер не подключён');
+            }
+
+            await writeChunked(writeChar, buildPacket(0xA2, new Uint8Array([intensity & 0xff])));
+            await new Promise(r => setTimeout(r, 50));
+
+            const statusPromise = notifyChar ? waitNotify(0xA1, 1200) : Promise.resolve(null);
+            await writeChunked(writeChar, buildPacket(0xA1, new Uint8Array([0x00])));
+            await statusPromise;
+
+            const { data, rows } = canvasToMonoRows(sourceCanvas, feedLines);
+
+            const startPayload = new Uint8Array([
+                rows & 0xff,
+                (rows >> 8) & 0xff,
+                0x30,
+                0x00
+            ]);
+            const ackPromise = notifyChar ? waitNotify(0xA9, 2500) : new Promise(r => setTimeout(r, 150));
+            await writeChunked(writeChar, buildPacket(0xA9, startPayload));
+            await ackPromise;
+
+            const completePromise = notifyChar ? waitNotify(0xAA, 15000) : new Promise(r => setTimeout(r, 800));
+            await writeChunked(dataChar, data, 120);
+
+            await writeChunked(writeChar, buildPacket(0xAD, new Uint8Array([0x00])));
+            await completePromise;
+        }
+
+        return { connect, disconnect, isConnected, printCanvas, isUserCancelled };
+    })();
+
+    // ----- Работа с маршрутами -----
+    function getPresets(company) {
+        try { return JSON.parse(localStorage.getItem('bilet_presets_' + company)) || []; } catch(e){ return []; }
+    }
+    function setPresets(company, arr) {
+        localStorage.setItem('bilet_presets_' + company, JSON.stringify(arr));
+    }
+
+    function addRouteWithReverse(company) {
+        let inp = document.getElementById(company + 'NewRoute');
+        let val = inp.value.trim();
+        if(!val) { showMessage("❌", "Введите маршрут в формате: номер остановка1-остановка2"); return; }
+        
+        let parts = val.split(' ');
+        if(parts.length < 2) { showMessage("❌", "Неверный формат. Пример: 345 Абашево-Вокзал"); return; }
+        let routeNum = parts[0];
+        let stops = parts.slice(1).join(' ');
+        if(!stops.includes('-')) { showMessage("❌", "Используйте дефис между остановками: остановка1-остановка2"); return; }
+        
+        let stopsArr = stops.split('-');
+        if(stopsArr.length !== 2) { showMessage("❌", "Формат: остановка1-остановка2 (две остановки через дефис)"); return; }
+        
+        let forward = routeNum + ' ' + stops;
+        let backward = routeNum + ' ' + stopsArr[1] + '-' + stopsArr[0];
+        
+        let presets = getPresets(company);
+        let newRoutes = [];
+        if(!presets.includes(forward)) newRoutes.push(forward);
+        if(!presets.includes(backward)) newRoutes.push(backward);
+        
+        if(newRoutes.length === 0) { showMessage("ℹ️", "Маршруты уже существуют"); return; }
+        
+        presets = presets.concat(newRoutes);
+        setPresets(company, presets);
+        refreshAllLists(company);
+        inp.value = '';
+        showMessage("✅", "Добавлено: " + newRoutes.join(', '));
+        scheduleUpdate();
+    }
+
+    function deleteSelectedRoute(company) {
+        let sel = document.getElementById(company + 'DeleteSelect');
+        let idx = sel.value;
+        if(idx === '') { showMessage("ℹ️", "Выберите маршрут для удаления"); return; }
+        let presets = getPresets(company);
+        let removed = presets[parseInt(idx)];
+        presets.splice(parseInt(idx), 1);
+        setPresets(company, presets);
+        refreshAllLists(company);
+        showMessage("🗑️", "Удалён: " + removed);
+        scheduleUpdate();
+    }
+
+    function applyRoute(company, routeStr) {
+        if(!routeStr) return;
+        isApplyingRoute = true;
+        let parts = routeStr.split(' ');
+        if(parts.length < 2) { isApplyingRoute = false; return; }
+        let routeNum = parts[0];
+        let stops = parts.slice(1).join(' ');
+        
+        if(company === 'patp') {
+            document.getElementById('patp_route').value = routeNum;
+        } else if(company === 'piter') {
+            document.getElementById('piter_route').value = routeNum;
+            document.getElementById('piter_stops').value = stops;
+        } else {
+            document.getElementById('mttp_route').value = routeNum;
+        }
+        
+        document.getElementById('routeSearchInput').value = '';
+        filterRoutesInstant();
+        
+        setTimeout(() => {
+            isApplyingRoute = false;
+        }, 100);
+        
+        scheduleUpdate();
+    }
+
+    function refreshAllLists(company) {
+        let presets = getPresets(company);
+        allPresetsCache = presets;
+        
+        let mainSelect = document.getElementById('routePresetSelect');
+        if(mainSelect) {
+            let searchVal = document.getElementById('routeSearchInput').value.trim().toLowerCase();
+            let filtered = presets.filter(p => p.toLowerCase().includes(searchVal));
+            mainSelect.innerHTML = '';
+            if(filtered.length === 0) {
+                let opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = searchVal ? '— нет подходящих маршрутов —' : '— выберите маршрут —';
+                mainSelect.appendChild(opt);
+            } else {
+                filtered.forEach((p) => {
+                    let opt = document.createElement('option');
+                    opt.value = p;
+                    opt.textContent = p;
+                    mainSelect.appendChild(opt);
+                });
+            }
+            mainSelect.size = Math.min(filtered.length + 1, 8);
+            if(filtered.length > 0 && searchVal.length > 0) {
+                mainSelect.focus();
+                mainSelect.selectedIndex = 0;
+            }
+            
+            let countEl = document.getElementById('routeCount');
+            if(countEl) {
+                if(searchVal) {
+                    countEl.textContent = `🔍 Найдено: ${filtered.length} из ${presets.length}`;
+                    countEl.className = 'route-count highlight';
+                } else {
+                    countEl.textContent = `📋 Всего маршрутов: ${presets.length}`;
+                    countEl.className = 'route-count';
+                }
+            }
+        }
+        
+        let delSelect = document.getElementById(company + 'DeleteSelect');
+        if(delSelect) {
+            delSelect.innerHTML = '<option value="">— выберите для удаления —</option>';
+            presets.forEach((p, idx) => {
+                let opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = p;
+                delSelect.appendChild(opt);
+            });
+        }
+    }
+
+    function filterRoutesInstant() {
+        if (isApplyingRoute) return;
+        
+        let company = currentCompany;
+        let presets = getPresets(company);
+        let searchVal = document.getElementById('routeSearchInput').value.trim().toLowerCase();
+        let mainSelect = document.getElementById('routePresetSelect');
+        if(!mainSelect) return;
+        
+        let filtered = presets.filter(p => p.toLowerCase().includes(searchVal));
+        mainSelect.innerHTML = '';
+        if(filtered.length === 0) {
+            let opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = searchVal ? '— нет подходящих маршрутов —' : '— выберите маршрут —';
+            mainSelect.appendChild(opt);
+        } else {
+            filtered.forEach((p) => {
+                let opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                mainSelect.appendChild(opt);
+            });
+        }
+        mainSelect.size = Math.min(filtered.length + 1, 8);
+        if(filtered.length > 0 && searchVal.length > 0) {
+            mainSelect.focus();
+            mainSelect.selectedIndex = 0;
+        } else if(searchVal.length === 0) {
+            mainSelect.size = 1;
+        }
+        
+        let countEl = document.getElementById('routeCount');
+        if(countEl) {
+            if(searchVal) {
+                countEl.textContent = `🔍 Найдено: ${filtered.length} из ${presets.length}`;
+                countEl.className = 'route-count highlight';
+            } else {
+                countEl.textContent = `📋 Всего маршрутов: ${presets.length}`;
+                countEl.className = 'route-count';
+            }
+        }
+    }
+
+    // ----- Генерация билетов -----
+    function showMessage(title, msg) {
+        let d = document.createElement('div');
+        d.className = 'custom-alert';
+        d.innerHTML = `<div class="custom-alert-content"><strong>${title}</strong><p style="margin-top:10px;">${msg}</p><button onclick="this.closest('.custom-alert').remove()">OK</button></div>`;
+        document.body.appendChild(d);
+    }
+
+    function getCurrentDateTime() {
+        let n = new Date();
+        let d = String(n.getDate()).padStart(2,'0');
+        let m = String(n.getMonth()+1).padStart(2,'0');
+        let y = n.getFullYear();
+        let h = String(n.getHours()).padStart(2,'0');
+        let min = String(n.getMinutes()).padStart(2,'0');
+        let s = String(n.getSeconds()).padStart(2,'0');
+        return `${d}/${m}/${y} ${h}:${min}:${s}`;
+    }
+
+    function addMinutesToField(targetId, minutes) {
+        let inp = document.getElementById(targetId);
+        if(!inp) return;
+        let val = inp.value;
+        let parts = val.split(' ');
+        if(parts.length !== 2) { inp.value = getCurrentDateTime(); return; }
+        let datePart = parts[0];
+        let timeArr = parts[1].split(':');
+        if(timeArr.length !== 3) { inp.value = getCurrentDateTime(); return; }
+        let h = parseInt(timeArr[0]), mi = parseInt(timeArr[1]), s = parseInt(timeArr[2]);
+        mi += minutes;
+        while(mi >= 60) { mi -= 60; h += 1; }
+        while(h >= 24) { h -= 24; }
+        let newTime = String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0')+':'+String(s).padStart(2,'0');
+        inp.value = datePart + ' ' + newTime;
+        scheduleUpdate();
+    }
+
+    function generateNewTicketNumber() {
+        if (currentCompany === 'mttp') {
+            currentMttpTicketNumber = Math.floor(Math.random() * 9000000000) + 1000000000;
+        } else {
+            currentTicketNumber = Math.floor(Math.random() * 90000) + 10000;
+        }
+    }
+
+    function fixNumber(num, len) { return String(num).padStart(len, '0'); }
+    function fixRoute(route, len=3) { return String(route).padEnd(len, ' '); }
+    function fixPrice(p) { return parseFloat(p).toFixed(2); }
+    function fixStops(s, len=20) { let t=String(s); if(t.length>len) t=t.slice(0,len); else t=t.padEnd(len,' '); return t; }
+
+    function generatePatpTicket(useCurrent = true) {
+        let time = document.getElementById('patp_time').value;
+        let route = document.getElementById('patp_route').value;
+        let card = document.getElementById('patp_card').value;
+        let price = document.getElementById('patp_price').value;
+        let tn = useCurrent ? currentTicketNumber : (Math.floor(Math.random() * 90000)+10000);
+        let ticket = fixNumber(tn,5);
+        if(useCurrent) currentTicketNumber = parseInt(ticket);
+        if(!time) time = getCurrentDateTime();
+        let fixedRoute = fixRoute(route,3);
+        let fixedPrice = fixPrice(price);
+        return `          ДО ПАТП (Новокузнецк)
+             ИНН 4220031996
+                  БИЛЕТ НА
+  муниципальный / автобус
+    НОМЕР БИЛЕТА: ${ticket}
+       № терминала ТТ: Т176971
+          ${time}
+  ссылка на чек
+  https://t-karta.ru/receipt/form
+       Маршрут "${fixedRoute}"
+  ОПЛАТА ПО БАНКОВСКОЙ КАРТЕ
+     № терминала банка: 200932000168
+     Карта: ****${card.slice(-4)}
+     МПС: MIR
+     СТОИМОСТЬ БИЛЕТА: ${fixedPrice} р.
+  Валюта операции: рубль`;
+    }
+
+    function generatePiterTicket(useCurrent = true) {
+        let time = document.getElementById('piter_time').value;
+        let route = document.getElementById('piter_route').value;
+        let stops = document.getElementById('piter_stops').value;
+        let price = document.getElementById('piter_price').value;
+        let tn = useCurrent ? currentTicketNumber : (Math.floor(Math.random() * 90000)+10000);
+        let ticket = fixNumber(tn,5);
+        if(useCurrent) currentTicketNumber = parseInt(ticket);
+        if(!time) time = getCurrentDateTime();
+        let fixedRoute = fixRoute(route,3);
+        let fixedStops = fixStops(stops,20);
+        let fixedPrice = fixPrice(price);
+        return `           ООО ПИТЕРАВТО
+             ИНН 7819027463
+                 БИЛЕТ НА
+  муниципальный / автобус
+    НОМЕР БИЛЕТА: ${ticket}
+      № терминала ТТ: Т095133
+         ${time}
+           Маршрут "${fixedRoute}"
+  ссылка на чек
+  https://t-karta.ru/receipt/form
+${fixedStops}
+Оплачено наличными: ${fixedPrice} р.`;
+    }
+
+    function generateMttpTicket(useCurrent = true) {
+        let time = document.getElementById('mttp_time').value;
+        let route = document.getElementById('mttp_route').value;
+        let card = document.getElementById('mttp_card').value;
+        let price = document.getElementById('mttp_price').value;
+        let tn = useCurrent ? currentMttpTicketNumber : (Math.floor(Math.random() * 9000000000)+1000000000);
+        let ticket = fixNumber(tn,10);
+        if(useCurrent) currentMttpTicketNumber = parseInt(ticket);
+        if(!time) time = getCurrentDateTime();
+        let fixedRoute = fixRoute(route,3);
+        let fixedPrice = fixPrice(price);
+        return `        МТТП Троллейбус (Новокузнецк)
+           ИНН 4216000191
+БИЛЕТ НА муниципальный / троллейбус
+ НОМЕР БИЛЕТА (ТРАНЗАКЦИИ): ${ticket}
+    № терминала ТТ: Т176900
+     ${time}
+  БАНКОВСК.КАРТА MIR
+  ссылка на чек
+  https://t-karta.ru/receipt/form
+      Маршрут "${fixedRoute}"
+   № терминала банка: 202363000210
+   Карта: ****${card.slice(-4)}
+   МПС: MIR
+   СТОИМОСТЬ БИЛЕТА: ${fixedPrice} р.
+  Валюта операции: рубль`;
+    }
+
+    function forceApplyStyles() {
+        let ls = document.getElementById('letterSpacingSlider').value;
+        let lh = document.getElementById('lineHeightSlider').value;
+        let fw = document.getElementById('fontWeightSlider').value;
+        let el = document.getElementById('ticketText');
+        el.style.letterSpacing = ls + 'px';
+        el.style.lineHeight = lh;
+        el.style.fontWeight = fw;
+        document.getElementById('spacingValue').innerText = ls + ' px';
+        document.getElementById('lineHeightValue').innerText = lh;
+        document.getElementById('fontWeightValue').innerText = fw === '900' ? '900 (жирный)' : fw;
+    }
+
+    function scheduleUpdate() {
+        clearTimeout(updateTimeout);
+        updateTimeout = setTimeout(() => {
+            let draftText = localStorage.getItem('bilet_draft_' + currentCompany);
+            if(draftText && draftText.trim()) {
+                return;
+            }
+            generateNewTicketNumber();
+            updateTicket(false);
+        }, 200);
+    }
+
+    function updateTicket(keepNumber = true) {
+        if(isUpdating) return;
+        isUpdating = true;
+        let text;
+        if(currentCompany === 'patp') text = generatePatpTicket(keepNumber);
+        else if(currentCompany === 'piter') text = generatePiterTicket(keepNumber);
+        else text = generateMttpTicket(keepNumber);
+        document.getElementById('ticketText').innerText = text;
+        currentTicketText = text;
+        forceApplyStyles();
+        if(currentCompany !== 'mttp') updateQRCode();
+        isUpdating = false;
+    }
+
+    function updateQRCode() {
+        if(currentCompany === 'mttp') return;
+        let div = document.getElementById('qrWrapper');
+        div.innerHTML = '';
+        let size = document.getElementById('qrSizeSlider').value;
+        try {
+            new QRCode(div, {
+                text: 'https://t-karta.ru/receipt/form',
+                width: parseInt(size),
+                height: parseInt(size),
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            currentQR = true;
+        } catch(e) {}
+        let left = document.getElementById('qrLeftSlider').value;
+        let top = document.getElementById('qrTopSlider').value;
+        document.getElementById('qrWrapper').style.marginLeft = left + 'px';
+        document.getElementById('qrWrapper').style.marginTop = top + 'px';
+    }
+
+    function saveSettingsForCompany(company) {
+        let s = {
+            letterSpacing: document.getElementById('letterSpacingSlider').value,
+            lineHeight: document.getElementById('lineHeightSlider').value,
+            fontWeight: document.getElementById('fontWeightSlider').value,
+            qrSize: document.getElementById('qrSizeSlider').value,
+            qrLeft: document.getElementById('qrLeftSlider').value,
+            qrTop: document.getElementById('qrTopSlider').value
+        };
+        localStorage.setItem('bilet_settings_' + company, JSON.stringify(s));
+    }
+
+    function loadSettingsForCompany(company) {
+        let saved = localStorage.getItem('bilet_settings_' + company);
+        if(saved) {
+            let s = JSON.parse(saved);
+            document.getElementById('letterSpacingSlider').value = s.letterSpacing || 0.8;
+            document.getElementById('lineHeightSlider').value = s.lineHeight || 1.05;
+            document.getElementById('fontWeightSlider').value = s.fontWeight || 900;
+            document.getElementById('qrSizeSlider').value = s.qrSize || 90;
+            document.getElementById('qrLeftSlider').value = s.qrLeft || 14;
+            document.getElementById('qrTopSlider').value = s.qrTop || 10;
+        } else if (company === 'piter') {
+            document.getElementById('letterSpacingSlider').value = 1.1;
+            document.getElementById('lineHeightSlider').value = 1.3;
+            document.getElementById('fontWeightSlider').value = 900;
+            document.getElementById('qrSizeSlider').value = 116;
+            document.getElementById('qrLeftSlider').value = 20;
+            document.getElementById('qrTopSlider').value = 12;
+        } else {
+            document.getElementById('letterSpacingSlider').value = 0.8;
+            document.getElementById('lineHeightSlider').value = 1.15;
+            document.getElementById('fontWeightSlider').value = 900;
+            document.getElementById('qrSizeSlider').value = 96;
+            document.getElementById('qrLeftSlider').value = 14;
+            document.getElementById('qrTopSlider').value = 10;
+        }
+        forceApplyStyles();
+        applyQRSettingsWithoutSave();
+    }
+
+    function applyQRSettingsWithoutSave() {
+        if(currentCompany === 'mttp') return;
+        let size = document.getElementById('qrSizeSlider').value;
+        let left = document.getElementById('qrLeftSlider').value;
+        let top = document.getElementById('qrTopSlider').value;
+        let w = document.getElementById('qrWrapper');
+        if(w) { w.style.marginLeft = left + 'px'; w.style.marginTop = top + 'px'; }
+        document.querySelectorAll('#qrSettingsBlock .setting-value').forEach(el => {
+            if(el.innerText.includes('Размер')) el.innerText = 'Размер: ' + size + ' px';
+            if(el.innerText.includes('Отступ слева')) el.innerText = 'Отступ слева: ' + left + ' px';
+            if(el.innerText.includes('Отступ сверху')) el.innerText = 'Отступ сверху: ' + top + ' px';
+        });
+        if(currentQR) updateQRCode();
+    }
+
+    function applyQRSettings() { applyQRSettingsWithoutSave(); saveSettingsForCompany(currentCompany); }
+
+    function saveDraftPermanently() {
+        let text = document.getElementById('draftText').value;
+        if(text && text.trim()) {
+            localStorage.setItem('bilet_draft_' + currentCompany, text);
+            document.getElementById('ticketText').innerText = text;
+            currentTicketText = text;
+            forceApplyStyles();
+            document.getElementById('editPanel').style.display = 'none';
+            showMessage("✅ Черновик сохранён", "Текст сохранён. Автообновление приостановлено.");
+        } else showMessage("❌ Ошибка", "Пустой черновик");
+    }
+    function clearDraft() {
+        localStorage.removeItem('bilet_draft_' + currentCompany);
+        scheduleUpdate();
+        document.getElementById('draftText').value = document.getElementById('ticketText').innerText;
+        showMessage("🗑️ Черновик очищен", "Автообновление возобновлено.");
+    }
+
+    function switchCompany(company) {
+        currentCompany = company;
+        const ticketEl = document.getElementById('ticketToCapture');
+        if (ticketEl) {
+            ticketEl.classList.toggle('piter-ticket', company === 'piter');
+        }
+        document.querySelectorAll('.company-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('companyPatpBtn').classList.toggle('active', company === 'patp');
+        document.getElementById('companyPiterBtn').classList.toggle('active', company === 'piter');
+        document.getElementById('companyMttpBtn').classList.toggle('active', company === 'mttp');
+        document.querySelectorAll('.form-card').forEach(f => f.classList.add('hidden'));
+        document.getElementById('patpForm').classList.toggle('hidden', company !== 'patp');
+        document.getElementById('piterForm').classList.toggle('hidden', company !== 'piter');
+        document.getElementById('mttpForm').classList.toggle('hidden', company !== 'mttp');
+        document.getElementById('qrSettingsBlock').style.display = (company === 'mttp') ? 'none' : 'block';
+        document.getElementById('qrContainer').style.display = (company === 'mttp') ? 'none' : 'block';
+        loadSettingsForCompany(company);
+        let saved = localStorage.getItem('bilet_draft_' + company);
+        if(saved && saved.trim()) {
+            document.getElementById('ticketText').innerText = saved;
+            document.getElementById('draftText').value = saved;
+            currentTicketText = saved;
+            forceApplyStyles();
+        } else {
+            scheduleUpdate();
+            document.getElementById('draftText').value = document.getElementById('ticketText').innerText;
+        }
+        if(company !== 'mttp') updateQRCode();
+        refreshAllLists(company);
+        document.getElementById('routeSearchInput').value = '';
+        filterRoutesInstant();
+    }
+
+    // Строгий растровый захват предпросмотра билета точно как он отображается внизу экрана,
+    // растянутый ровно на 384 px (58 мм) — исключительно картинка (битовая карта), без текста/ESC-POS
+    async function renderTicketRasterCanvas(el) {
+        const rect = el.getBoundingClientRect();
+        const captureWidth = Math.max(1, Math.round(rect.width || 384));
+        const captureHeight = Math.max(1, Math.round(rect.height || 400));
+
+        const rawCanvas = await html2canvas(el, {
+            width: captureWidth,
+            height: captureHeight,
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false,
+            useCORS: true
+        });
+
+        const scaledContentHeight = Math.max(1, Math.round((rawCanvas.height * 384) / rawCanvas.width));
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = 384;
+        const outHeight = scaledContentHeight;
+        outCanvas.height = outHeight;
+
+        const ctx = outCanvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+        ctx.drawImage(rawCanvas, 0, 0, 384, scaledContentHeight);
+
+        // Жёсткий бинарный порог для чёткой картинки на термобумаге
+        const imgData = ctx.getImageData(0, 0, outCanvas.width, outCanvas.height);
+        const px = imgData.data;
+        for (let i = 0; i < px.length; i += 4) {
+            const lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+            const val = lum < 180 ? 0 : 255;
+            px[i] = val;
+            px[i + 1] = val;
+            px[i + 2] = val;
+            px[i + 3] = 255;
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        // Обрезаем пустые белые строки внизу (с небольшим отступом 4 px под QR-кодом)
+        let lastBlackY = -1;
+        for (let y = outCanvas.height - 1; y >= 0; y--) {
+            let rowHasBlack = false;
+            for (let x = 0; x < outCanvas.width; x++) {
+                const idx = (y * outCanvas.width + x) * 4;
+                if (px[idx] === 0) {
+                    rowHasBlack = true;
+                    break;
+                }
+            }
+            if (rowHasBlack) {
+                lastBlackY = y;
+                break;
+            }
+        }
+
+        if (lastBlackY >= 0) {
+            const trimmedHeight = Math.min(outCanvas.height, lastBlackY + 5);
+            if (trimmedHeight > 0 && trimmedHeight < outCanvas.height) {
+                const trimmedCanvas = document.createElement('canvas');
+                trimmedCanvas.width = outCanvas.width;
+                trimmedCanvas.height = trimmedHeight;
+                const tCtx = trimmedCanvas.getContext('2d');
+                tCtx.fillStyle = '#ffffff';
+                tCtx.fillRect(0, 0, trimmedCanvas.width, trimmedHeight);
+                tCtx.drawImage(outCanvas, 0, 0, outCanvas.width, trimmedHeight, 0, 0, outCanvas.width, trimmedHeight);
+                return trimmedCanvas;
+            }
+        }
+
+        return outCanvas;
+    }
+
+    // ----- Инициализация -----
+    function init() {
+        document.querySelectorAll('.btn-time').forEach(btn => {
+            btn.addEventListener('click', function() {
+                addMinutesToField(this.dataset.target, parseInt(this.dataset.minutes));
+            });
+        });
+
+        document.querySelectorAll('#patpForm input, #patpForm textarea, #piterForm input, #piterForm textarea, #mttpForm input, #mttpForm textarea').forEach(el => {
+            el.addEventListener('input', function() {
+                let draftText = localStorage.getItem('bilet_draft_' + currentCompany);
+                if(draftText && draftText.trim()) {
+                    return;
+                }
+                scheduleUpdate();
+            });
+            el.addEventListener('change', function() {
+                let draftText = localStorage.getItem('bilet_draft_' + currentCompany);
+                if(draftText && draftText.trim()) return;
+                scheduleUpdate();
+            });
+        });
+
+        ['patp','piter','mttp'].forEach(c => {
+            document.getElementById(c + 'AddRoute').addEventListener('click', ()=>addRouteWithReverse(c));
+            document.getElementById(c + 'DeleteBtn').addEventListener('click', ()=>deleteSelectedRoute(c));
+            document.getElementById(c + 'NewRoute').addEventListener('keypress', function(e) {
+                if(e.key === 'Enter') { e.preventDefault(); addRouteWithReverse(c); }
+            });
+        });
+
+        document.getElementById('routePresetSelect').addEventListener('change', function() {
+            let val = this.value;
+            if(val) {
+                applyRoute(currentCompany, val);
+                localStorage.removeItem('bilet_draft_' + currentCompany);
+                document.getElementById('draftText').value = document.getElementById('ticketText').innerText;
+            }
+        });
+
+        document.getElementById('routeSearchInput').addEventListener('input', function() {
+            filterRoutesInstant();
+            let mainSelect = document.getElementById('routePresetSelect');
+            if(this.value.trim().length > 0) {
+                mainSelect.size = Math.min(mainSelect.options.length, 8);
+            } else {
+                mainSelect.size = 1;
+            }
+        });
+
+        document.getElementById('routeSearchInput').addEventListener('focus', function() {
+            let mainSelect = document.getElementById('routePresetSelect');
+            if(mainSelect.options.length > 1) {
+                mainSelect.size = Math.min(mainSelect.options.length, 8);
+            }
+        });
+
+        document.getElementById('routeSearchInput').addEventListener('blur', function() {
+            setTimeout(() => {
+                let mainSelect = document.getElementById('routePresetSelect');
+                if(!document.activeElement || document.activeElement !== mainSelect) {
+                    mainSelect.size = 1;
+                }
+            }, 200);
+        });
+
+        document.getElementById('letterSpacingSlider').addEventListener('input', ()=>{ forceApplyStyles(); saveSettingsForCompany(currentCompany); });
+        document.getElementById('lineHeightSlider').addEventListener('input', ()=>{ forceApplyStyles(); saveSettingsForCompany(currentCompany); });
+        document.getElementById('fontWeightSlider').addEventListener('input', ()=>{ forceApplyStyles(); saveSettingsForCompany(currentCompany); });
+        document.getElementById('qrSizeSlider').addEventListener('input', function(){ applyQRSettings(); updateQRCode(); });
+        document.getElementById('qrLeftSlider').addEventListener('input', applyQRSettings);
+        document.getElementById('qrTopSlider').addEventListener('input', applyQRSettings);
+
+        document.getElementById('editBtn').addEventListener('click', ()=>document.getElementById('editPanel').style.display='block');
+        document.getElementById('saveDraftBtn').addEventListener('click', saveDraftPermanently);
+        document.getElementById('cancelEditBtn').addEventListener('click', ()=>document.getElementById('editPanel').style.display='none');
+        document.getElementById('clearDraftBtn').addEventListener('click', clearDraft);
+
+        document.getElementById('companyPatpBtn').onclick = ()=>switchCompany('patp');
+        document.getElementById('companyPiterBtn').onclick = ()=>switchCompany('piter');
+        document.getElementById('companyMttpBtn').onclick = ()=>switchCompany('mttp');
+
+        document.getElementById('shareBtn').addEventListener('click', async function() {
+            let el = document.getElementById('ticketToCapture');
+            let btn = this;
+            let orig = btn.innerText;
+            btn.innerText = '⏳...';
+            btn.disabled = true;
+            try {
+                let canvas = await renderTicketRasterCanvas(el);
+                canvas.toBlob(function(blob) {
+                    let file = new File([blob], `bilet_${Date.now()}.png`, { type: 'image/png' });
+                    if(navigator.share) {
+                        navigator.share({ title: 'Билет', files: [file] }).catch(console.log);
+                    } else {
+                        let link = document.createElement('a');
+                        link.download = `bilet_${Date.now()}.png`;
+                        link.href = canvas.toDataURL();
+                        link.click();
+                        showMessage("✅ Готово!", "Сохранено в Загрузки");
+                    }
+                    btn.innerText = '✅ Готово!';
+                    setTimeout(()=>{ btn.innerText = orig; btn.disabled = false; }, 2000);
+                });
+            } catch(e) {
+                btn.innerText = '❌ Ошибка';
+                setTimeout(()=>{ btn.innerText = orig; btn.disabled = false; }, 2000);
+            }
+        });
+
+        const btConnectBtn = document.getElementById('btConnectBtn');
+        const btPrintBtn = document.getElementById('btPrintBtn');
+        const btStatus = document.getElementById('btStatus');
+        const btIntensitySlider = document.getElementById('btIntensitySlider');
+        const btIntensityVal = document.getElementById('btIntensityVal');
+        const btStrategySelect = document.getElementById('btStrategySelect');
+
+        const savedIntensity = localStorage.getItem('mxw_intensity');
+        if (savedIntensity) {
+            btIntensitySlider.value = savedIntensity;
+            btIntensityVal.innerText = savedIntensity;
+        }
+        btIntensitySlider.addEventListener('input', () => {
+            btIntensityVal.innerText = btIntensitySlider.value;
+            localStorage.setItem('mxw_intensity', btIntensitySlider.value);
+        });
+
+        function formatBleError(err) {
+            return (err && (err.message || err.name)) ? `${err.name ? err.name + ': ' : ''}${err.message || ''}` : String(err);
+        }
+
+        function updateBtUi(connected, name = '', strategyLabel = '') {
+            if (connected) {
+                btConnectBtn.innerText = '🟢 Отключить';
+                btConnectBtn.classList.add('connected');
+                btPrintBtn.disabled = false;
+                btStatus.innerText = `Подключено: ${name}${strategyLabel ? ' (' + strategyLabel + ')' : ''}`;
+                btStatus.className = 'bt-status ok';
+            } else {
+                btConnectBtn.innerText = '🔵 Подключить принтер';
+                btConnectBtn.classList.remove('connected');
+                btPrintBtn.disabled = true;
+                btStatus.innerText = 'Принтер не подключён (MXW01 / MXW-W5)';
+                btStatus.className = 'bt-status';
+            }
+        }
+
+        btConnectBtn.addEventListener('click', async () => {
+            if (MXWPrinter.isConnected()) {
+                MXWPrinter.disconnect();
+                updateBtUi(false);
+                return;
+            }
+            btConnectBtn.disabled = true;
+            btStatus.innerText = 'Подбор рабочего варианта сканирования...';
+            btStatus.className = 'bt-status';
+            try {
+                const res = await MXWPrinter.connect({
+                    strategy: btStrategySelect.value,
+                    onDisconnect: () => updateBtUi(false),
+                    onProgress: (step) => { btStatus.innerText = step; }
+                });
+                updateBtUi(true, res.name, res.strategyLabel);
+            } catch (err) {
+                btStatus.innerText = 'Ошибка: ' + formatBleError(err);
+                btStatus.className = 'bt-status err';
+            } finally {
+                btConnectBtn.disabled = false;
+            }
+        });
+
+        btPrintBtn.addEventListener('click', async () => {
+            const el = document.getElementById('ticketToCapture');
+            const origText = btPrintBtn.innerText;
+            btPrintBtn.disabled = true;
+            btPrintBtn.innerText = '⏳ Печать...';
+            btStatus.innerText = 'Рендер в растр 58 мм и отправка...';
+            btStatus.className = 'bt-status';
+
+            try {
+                const rasterCanvas = await renderTicketRasterCanvas(el);
+                const intensity = parseInt(btIntensitySlider.value, 10);
+                const feedLines = parseInt(document.getElementById('btFeedSelect').value, 10);
+                await MXWPrinter.printCanvas(rasterCanvas, { intensity, feedLines });
+                btStatus.innerText = '✅ Отправлено на печать';
+                btStatus.className = 'bt-status ok';
+            } catch (err) {
+                btStatus.innerText = '❌ Ошибка печати: ' + (err.message || err);
+                btStatus.className = 'bt-status err';
+            } finally {
+                btPrintBtn.innerText = origText;
+                btPrintBtn.disabled = !MXWPrinter.isConnected();
+            }
+        });
+
+        let dt = getCurrentDateTime();
+        document.getElementById('patp_time').value = dt;
+        document.getElementById('piter_time').value = dt;
+        document.getElementById('mttp_time').value = dt;
+        switchCompany('patp');
+        
+        setTimeout(() => {
+            let wrapper = document.getElementById('qrWrapper');
+            if(wrapper && typeof interact !== 'undefined' && currentCompany !== 'mttp') {
+                interact(wrapper).draggable({
+                    onmove: function(event) {
+                        let target = event.target;
+                        let left = parseFloat(target.style.marginLeft) || 0;
+                        let top = parseFloat(target.style.marginTop) || 0;
+                        let nl = left + event.dx, nt = top + event.dy;
+                        nl = Math.max(0, Math.min(200, nl));
+                        nt = Math.max(0, Math.min(300, nt));
+                        target.style.marginLeft = nl + 'px';
+                        target.style.marginTop = nt + 'px';
+                        document.getElementById('qrLeftSlider').value = nl;
+                        document.getElementById('qrTopSlider').value = nt;
+                        saveSettingsForCompany(currentCompany);
+                    }
+                });
+            }
+        }, 600);
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
