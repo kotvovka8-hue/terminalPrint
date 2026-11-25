@@ -97,6 +97,8 @@
         .btn-clear-draft { background: #ff3b30; color: white; }
         .btn-time { background: #2c2c2e; color: #f0f0f0; border: 1px solid #48484a; flex: 1; min-width: 44px; }
         .btn-time:hover { background: #3a3a3c; }
+        .btn-now { background: #1f4e78; border-color: #2f7ac0; color: #e8f4ff; min-width: 76px; }
+        .btn-now:hover { background: #266094; }
         .btn-route { background: #0a84ff; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; }
         .btn-route-danger { background: #ff453a; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; }
         
@@ -392,10 +394,11 @@
                 <input type="text" id="patp_time">
             </div>
             <div class="time-buttons">
-                <button class="btn-time" data-target="patp_time" data-minutes="2">+2</button>
-                <button class="btn-time" data-target="patp_time" data-minutes="5">+5</button>
-                <button class="btn-time" data-target="patp_time" data-minutes="10">+10</button>
-                <button class="btn-time" data-target="patp_time" data-minutes="15">+15</button>
+                <button type="button" class="btn-time btn-now" data-target="patp_time" title="Обновить на текущее время">🕒 Сейчас</button>
+                <button type="button" class="btn-time" data-target="patp_time" data-minutes="2">+2</button>
+                <button type="button" class="btn-time" data-target="patp_time" data-minutes="5">+5</button>
+                <button type="button" class="btn-time" data-target="patp_time" data-minutes="10">+10</button>
+                <button type="button" class="btn-time" data-target="patp_time" data-minutes="15">+15</button>
             </div>
         </div>
         
@@ -442,10 +445,11 @@
                 <input type="text" id="piter_time">
             </div>
             <div class="time-buttons">
-                <button class="btn-time" data-target="piter_time" data-minutes="2">+2</button>
-                <button class="btn-time" data-target="piter_time" data-minutes="5">+5</button>
-                <button class="btn-time" data-target="piter_time" data-minutes="10">+10</button>
-                <button class="btn-time" data-target="piter_time" data-minutes="15">+15</button>
+                <button type="button" class="btn-time btn-now" data-target="piter_time" title="Обновить на текущее время">🕒 Сейчас</button>
+                <button type="button" class="btn-time" data-target="piter_time" data-minutes="2">+2</button>
+                <button type="button" class="btn-time" data-target="piter_time" data-minutes="5">+5</button>
+                <button type="button" class="btn-time" data-target="piter_time" data-minutes="10">+10</button>
+                <button type="button" class="btn-time" data-target="piter_time" data-minutes="15">+15</button>
             </div>
         </div>
         
@@ -491,10 +495,11 @@
                 <input type="text" id="mttp_time">
             </div>
             <div class="time-buttons">
-                <button class="btn-time" data-target="mttp_time" data-minutes="2">+2</button>
-                <button class="btn-time" data-target="mttp_time" data-minutes="5">+5</button>
-                <button class="btn-time" data-target="mttp_time" data-minutes="10">+10</button>
-                <button class="btn-time" data-target="mttp_time" data-minutes="15">+15</button>
+                <button type="button" class="btn-time btn-now" data-target="mttp_time" title="Обновить на текущее время">🕒 Сейчас</button>
+                <button type="button" class="btn-time" data-target="mttp_time" data-minutes="2">+2</button>
+                <button type="button" class="btn-time" data-target="mttp_time" data-minutes="5">+5</button>
+                <button type="button" class="btn-time" data-target="mttp_time" data-minutes="10">+10</button>
+                <button type="button" class="btn-time" data-target="mttp_time" data-minutes="15">+15</button>
             </div>
         </div>
         
@@ -980,9 +985,80 @@
         return { connect, disconnect, isConnected, printCanvas, isUserCancelled };
     })();
 
+    const DEFAULT_ROUTES_BY_COMPANY = {
+        patp: [
+            "5 Абашево-Вокзал",
+            "5 Вокзал-Абашево",
+            "66 Лизы чайк-Промыш",
+            "66 Промыш-Лизы чайк",
+            "70 Веры Сол-СовПлощадь",
+            "70 СовПлощадь-Веры Сол",
+            "70* Веры Сол-СовПлощадь",
+            "70* СовПлощадь-Веры Сол",
+            "88 ЦВТИ-СШМНУ",
+            "88 СШМНУ-ЦВТИ",
+            "25* Вокзал-18й Квартал",
+            "25* 18й Квартал-Вокзал",
+            "25 Набер-18й Квартал",
+            "25 18й Квартал-Набер",
+            "27 Ул Челюск-ТРЦ Планета",
+            "27 ТРЦ Планета-Ул Челюск"
+        ],
+        piter: [
+            "5 Абашево-Вокзал",
+            "5 Вокзал-Абашево",
+            "66 Лизы чайк-Промыш",
+            "66 Промыш-Лизы чайк",
+            "70 Веры Сол-СовПлощадь",
+            "70 СовПлощадь-Веры Сол",
+            "70* Веры Сол-СовПлощадь",
+            "70* СовПлощадь-Веры Сол",
+            "88 ЦВТИ-СШМНУ",
+            "88 СШМНУ-ЦВТИ",
+            "25* Вокзал-18й Квартал",
+            "25* 18й Квартал-Вокзал",
+            "25 Набер-18й Квартал",
+            "25 18й Квартал-Набер",
+            "27 Ул Челюск-ТРЦ Планета",
+            "27 ТРЦ Планета-Ул Челюск"
+        ],
+        mttp: [
+            "5 Абашево-Вокзал",
+            "5 Вокзал-Абашево",
+            "66 Лизы чайк-Промыш",
+            "66 Промыш-Лизы чайк",
+            "70 Веры Сол-СовПлощадь",
+            "70 СовПлощадь-Веры Сол",
+            "70* Веры Сол-СовПлощадь",
+            "70* СовПлощадь-Веры Сол",
+            "88 ЦВТИ-СШМНУ",
+            "88 СШМНУ-ЦВТИ",
+            "25* Вокзал-18й Квартал",
+            "25* 18й Квартал-Вокзал",
+            "25 Набер-18й Квартал",
+            "25 18й Квартал-Набер",
+            "27 Ул Челюск-ТРЦ Планета",
+            "27 ТРЦ Планета-Ул Челюск"
+        ]
+    };
+
     // ----- Работа с маршрутами -----
     function getPresets(company) {
-        try { return JSON.parse(localStorage.getItem('bilet_presets_' + company)) || []; } catch(e){ return []; }
+        const key = 'bilet_presets_' + company;
+        const seededKey = 'bilet_presets_seeded_v1_' + company;
+        let arr = [];
+        try { arr = JSON.parse(localStorage.getItem(key)) || []; } catch(e){ arr = []; }
+        if (!localStorage.getItem(seededKey)) {
+            const defaults = DEFAULT_ROUTES_BY_COMPANY[company] || [];
+            const merged = [...arr];
+            for (const item of defaults) {
+                if (!merged.includes(item)) merged.push(item);
+            }
+            localStorage.setItem(key, JSON.stringify(merged));
+            localStorage.setItem(seededKey, '1');
+            return merged;
+        }
+        return arr;
     }
     function setPresets(company, arr) {
         localStorage.setItem('bilet_presets_' + company, JSON.stringify(arr));
@@ -1537,7 +1613,17 @@ ${fixedStops}
 
     // ----- Инициализация -----
     function init() {
-        document.querySelectorAll('.btn-time').forEach(btn => {
+        document.querySelectorAll('.btn-now').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.dataset.target;
+                const inp = document.getElementById(targetId);
+                if (!inp) return;
+                inp.value = getCurrentDateTime();
+                scheduleUpdate();
+            });
+        });
+
+        document.querySelectorAll('.btn-time:not(.btn-now)').forEach(btn => {
             btn.addEventListener('click', function() {
                 addMinutesToField(this.dataset.target, parseInt(this.dataset.minutes));
             });
